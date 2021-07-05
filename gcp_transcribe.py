@@ -27,7 +27,7 @@ def transcribe_from_folder(path2folder):
     :rtype:
     """
     for fname in os.listdir(path2folder):
-        if fname[-3:] == "mp3":
+        if fname[-3:].lower() == "mp3":
             print("\nstart processing {}".format(fname))
             transcribe_from_file(
                 os.path.join(path2folder, fname),

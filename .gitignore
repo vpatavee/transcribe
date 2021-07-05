@@ -3,3 +3,5 @@ credentials.json
 venv
 .idea
 *.txt
+
+!requirements.txt

@@ -1,0 +1,5 @@
+credentials.json
+*.mp3
+venv
+.idea
+*.txt

@@ -1,11 +1,12 @@
 import os
 from io import BytesIO
+import argparse
 
 from google.cloud import speech_v1p1beta1
 from google.cloud.speech_v1p1beta1 import enums, types
 from pydub import AudioSegment
 
-SIZE = 55000  # 50 sec
+SIZE = 55000  # 55 sec
 BUFFER = 5000  # 5 sec
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
@@ -89,4 +90,10 @@ def gcp_transcribe(audio_byte):
 
 
 if __name__ == '__main__':
-    transcribe_from_folder("/Users/pataveemeemeng/Downloads/lydia")
+    parser = argparse.ArgumentParser(description='Transcribe a folder containing mp3 and save their transcriptions'
+                                                 'in the same folder as txt file')
+    parser.add_argument('folder', help='absolute path to folder containing mp3')
+    args = parser.parse_args()
+
+    # "/Users/pataveemeemeng/Downloads/lydia"
+    transcribe_from_folder(args.folder)

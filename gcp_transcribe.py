@@ -1,6 +1,6 @@
+import argparse
 import os
 from io import BytesIO
-import argparse
 
 from google.cloud import speech_v1p1beta1
 from google.cloud.speech_v1p1beta1 import enums, types
@@ -51,7 +51,11 @@ def transcribe_from_file(path2mp3, path2transcription):
     if os.path.exists(path2transcription):
         os.remove(path2transcription)
 
-    sound = AudioSegment.from_mp3(path2mp3)
+    # https://stackoverflow.com/questions/64085443/audio-files-downloaded-from-youtube-dl-are-corrupted
+    # Your audio file is probably encoded not as MP3. It is probably AAC (usually having file extension .aac),
+    # which is the default format for .mp4 and AVC video codec and youtube.
+    # sound = AudioSegment.from_mp3(path2mp3)
+    sound = AudioSegment.from_file(path2mp3)
     length = len(sound)
     start = 0
 

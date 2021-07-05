@@ -6,7 +6,7 @@ from google.cloud import speech_v1p1beta1
 from google.cloud.speech_v1p1beta1 import enums, types
 from pydub import AudioSegment
 
-SIZE = 55000  # 50 sec
+SIZE = 55000  # 55 sec
 BUFFER = 5000  # 5 sec
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"

@@ -3,19 +3,12 @@ import os
 from io import BytesIO
 
 from google.cloud import speech_v1p1beta1
-from google.cloud.speech_v1p1beta1 import enums, types
 from pydub import AudioSegment
 
 SIZE = 55000  # 55 sec
 BUFFER = 5000  # 5 sec
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
-config_args = {
-    'enable_automatic_punctuation': True,
-    'language_code': "th-TH",
-    'encoding': enums.RecognitionConfig.AudioEncoding.MP3,
-    'sample_rate_hertz': 44100
-}
 
 
 def transcribe_from_folder(path2folder):
@@ -85,11 +78,42 @@ def gcp_transcribe(audio_byte):
     :return: transcription
     :rtype: string
     """
-    config = types.RecognitionConfig(**config_args)
-    audio = types.RecognitionAudio(content=audio_byte)
+
+    # example how to use RecognitionMetadata
+    # metadata = speech_v1p1beta1.RecognitionMetadata()
+    # metadata.interaction_type = speech_v1p1beta1.RecognitionMetadata.InteractionType.DISCUSSION
+    # metadata.microphone_distance = (
+    #     speech_v1p1beta1.RecognitionMetadata.MicrophoneDistance.FARFIELD
+    # )
+    # metadata.recording_device_type = (
+    #     speech_v1p1beta1.RecognitionMetadata.RecordingDeviceType.SMARTPHONE
+    # )
+
+    config = speech_v1p1beta1.RecognitionConfig(
+        encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
+        enable_automatic_punctuation=True,
+        sample_rate_hertz=44000,
+        language_code="th-TH",
+    )
+
+    audio = speech_v1p1beta1.RecognitionAudio(content=audio_byte)
     client = speech_v1p1beta1.SpeechClient()
-    response = client.recognize(config, audio)
+    response = client.recognize(config=config, audio=audio)
     transcription = ' '.join([result.alternatives[0].transcript for result in response.results])
+
+    # example from official tutorial
+    # for i, result in enumerate(response.results):
+    #     alternative = result.alternatives[0]
+    #     print("-" * 20)
+    #     print(u"First alternative of result {}".format(i))
+    #     print(u"Transcript: {}".format(alternative.transcript))
+    print("transcription", transcription)
+
+    # example for multiple speakers
+    # for word_info in response.results[-1].alternatives[0].words:
+    #     print(
+    #         u"word: '{}', speaker_tag: {}".format(word_info.word, word_info.speaker_tag)
+    #     )
     return transcription
 
 

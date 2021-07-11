@@ -80,26 +80,43 @@ def gcp_transcribe(audio_byte):
     """
 
     # example how to use RecognitionMetadata
-    # metadata = speech_v1p1beta1.RecognitionMetadata()
-    # metadata.interaction_type = speech_v1p1beta1.RecognitionMetadata.InteractionType.DISCUSSION
-    # metadata.microphone_distance = (
-    #     speech_v1p1beta1.RecognitionMetadata.MicrophoneDistance.FARFIELD
-    # )
-    # metadata.recording_device_type = (
-    #     speech_v1p1beta1.RecognitionMetadata.RecordingDeviceType.SMARTPHONE
-    # )
+    context = speech_v1p1beta1.SpeechContext(
+        phrases=["ไวรัส", "virus", "covid", "โคโรน่าไวรัส", "ไวรัส", "วัคซีน"],
+        boost=20
+    )
+
+    metadata = speech_v1p1beta1.RecognitionMetadata(
+        interaction_type=speech_v1p1beta1.RecognitionMetadata.InteractionType.DISCUSSION,
+        microphone_distance=speech_v1p1beta1.RecognitionMetadata.MicrophoneDistance.FARFIELD,
+        recording_device_type=speech_v1p1beta1.RecognitionMetadata.RecordingDeviceType.SMARTPHONE
+    )
+
+    diarization_config = speech_v1p1beta1.SpeakerDiarizationConfig(
+        enable_speaker_diarization=True,
+        min_speaker_count=2
+    )
 
     config = speech_v1p1beta1.RecognitionConfig(
         encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
         enable_automatic_punctuation=True,
-        sample_rate_hertz=44000,
+        sample_rate_hertz=24000,
         language_code="th-TH",
+        diarization_config=diarization_config,
+        metadata=metadata,
+        speech_contexts=[context]
     )
 
     audio = speech_v1p1beta1.RecognitionAudio(content=audio_byte)
     client = speech_v1p1beta1.SpeechClient()
     response = client.recognize(config=config, audio=audio)
     transcription = ' '.join([result.alternatives[0].transcript for result in response.results])
+    # example from official tutorial
+    # for i, result in enumerate(response.results):
+    #     for alternative in result.alternatives:
+    #
+    #         print("-" * 20)
+    #         print(u"First alternative of result {}".format(i))
+    #         print(u"Transcript: {}".format(alternative.transcript))
 
     # example from official tutorial
     # for i, result in enumerate(response.results):
@@ -110,10 +127,11 @@ def gcp_transcribe(audio_byte):
     print("transcription", transcription)
 
     # example for multiple speakers
-    # for word_info in response.results[-1].alternatives[0].words:
-    #     print(
-    #         u"word: '{}', speaker_tag: {}".format(word_info.word, word_info.speaker_tag)
-    #     )
+    for word_info in response.results[-1].alternatives[0].words:
+        if word_info.speaker_tag != 1:
+            print(
+                u"word: '{}', speaker_tag: {}".format(word_info.word, word_info.speaker_tag)
+            )
     return transcription
 
 

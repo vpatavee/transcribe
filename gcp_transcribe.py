@@ -5,7 +5,7 @@ from io import BytesIO
 from google.cloud import speech_v1p1beta1
 from pydub import AudioSegment
 
-SIZE = 55000  # 55 sec
+SIZE = 45000  # 55 sec
 BUFFER = 5000  # 5 sec
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
@@ -20,11 +20,11 @@ def transcribe_from_folder(path2folder):
     :rtype:
     """
     for fname in os.listdir(path2folder):
-        if fname[-3:].lower() == "mp3":
+        if fname.split(".")[-1].lower() in {"flac", "mp3", "wav"}:
             print("\nstart processing {}".format(fname))
             transcribe_from_file(
                 os.path.join(path2folder, fname),
-                os.path.join(path2folder, fname[:-3] + "txt"),
+                os.path.join(path2folder, "".join(fname.split(".")[:-1]) + ".txt"),
             )
             print("finish processing {}\n".format(fname))
 
@@ -49,6 +49,7 @@ def transcribe_from_file(path2mp3, path2transcription):
     # which is the default format for .mp4 and AVC video codec and youtube.
     # sound = AudioSegment.from_mp3(path2mp3)
     sound = AudioSegment.from_file(path2mp3)
+
     length = len(sound)
     start = 0
 
@@ -61,20 +62,22 @@ def transcribe_from_file(path2mp3, path2transcription):
         print("\tprocessing segment " + header)
         section = sound[start:start + SIZE]
         out = BytesIO()
-        section.export(out, format="mp3")
+        section.export(out, format="flac")
         audio_byte = out.read()
-        transcription = gcp_transcribe(audio_byte)
+        transcription = gcp_transcribe(audio_byte, sound.frame_rate)
         with open(path2transcription, "a") as f:
             f.write("\n" + header + "\n" + transcription + "\n")
 
         start = start + SIZE - BUFFER
 
 
-def gcp_transcribe(audio_byte):
+def gcp_transcribe(audio_byte, sample_rate_hertz=44000):
     """
 
     :param audio_byte: mp3 bytes
     :type audio_byte: bytes
+    :param sample_rate_hertz: sample_rate_hertz
+    :type sample_rate_hertz: int
     :return: transcription
     :rtype: string
     """
@@ -86,7 +89,7 @@ def gcp_transcribe(audio_byte):
     )
 
     metadata = speech_v1p1beta1.RecognitionMetadata(
-        interaction_type=speech_v1p1beta1.RecognitionMetadata.InteractionType.DISCUSSION,
+        interaction_type=speech_v1p1beta1.RecognitionMetadata.InteractionType.PHONE_CALL,
         microphone_distance=speech_v1p1beta1.RecognitionMetadata.MicrophoneDistance.FARFIELD,
         recording_device_type=speech_v1p1beta1.RecognitionMetadata.RecordingDeviceType.SMARTPHONE
     )
@@ -97,12 +100,12 @@ def gcp_transcribe(audio_byte):
     )
 
     config = speech_v1p1beta1.RecognitionConfig(
-        encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
+        #encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
         enable_automatic_punctuation=True,
-        sample_rate_hertz=24000,
+        sample_rate_hertz=sample_rate_hertz,
         language_code="th-TH",
-        diarization_config=diarization_config,
-        metadata=metadata,
+       # diarization_config=diarization_config,
+        #metadata=metadata,
         speech_contexts=[context]
     )
 
@@ -127,11 +130,12 @@ def gcp_transcribe(audio_byte):
     print("transcription", transcription)
 
     # example for multiple speakers
-    for word_info in response.results[-1].alternatives[0].words:
-        if word_info.speaker_tag != 1:
-            print(
-                u"word: '{}', speaker_tag: {}".format(word_info.word, word_info.speaker_tag)
-            )
+    if response.results:
+        for word_info in response.results[-1].alternatives[0].words:
+            if word_info.speaker_tag != 1:
+                print(
+                    u"word: '{}', speaker_tag: {}".format(word_info.word, word_info.speaker_tag)
+                )
     return transcription
 
 

@@ -5,7 +5,7 @@ from io import BytesIO
 from google.cloud import speech_v1p1beta1
 from pydub import AudioSegment
 
-SIZE = 45000  # 55 sec
+SIZE = 40000  # 55 sec
 BUFFER = 5000  # 5 sec
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
@@ -54,10 +54,10 @@ def transcribe_from_file(path2mp3, path2transcription):
     start = 0
 
     while start < length:
-        header = "starting : {:d} s, ending {:d} s, total {:d} s".format(
-            start // 1000,
-            min((start + SIZE), length) // 1000,
-            length // 1000
+        header = "starting {} ending {} total {}".format(
+            second_to_min(start // 1000),
+            second_to_min(min((start + SIZE), length) // 1000),
+            second_to_min(length // 1000)
         )
         print("\tprocessing segment " + header)
         section = sound[start:start + SIZE]
@@ -69,6 +69,23 @@ def transcribe_from_file(path2mp3, path2transcription):
             f.write("\n" + header + "\n" + transcription + "\n")
 
         start = start + SIZE - BUFFER
+
+
+def second_to_min(s):
+    """
+
+    :param s:
+    :type s:
+    :return: hh:mm:ss
+    :rtype: string
+    """
+
+    h = s // 3600
+    rem = s - h * 3600
+    m = rem // 60
+    s = s - h * 3600 - m * 60
+
+    return "{:02d}:{:02d}:{:02d}".format(h, m, s)
 
 
 def gcp_transcribe(audio_byte, sample_rate_hertz=44000):
@@ -84,7 +101,34 @@ def gcp_transcribe(audio_byte, sample_rate_hertz=44000):
 
     # example how to use RecognitionMetadata
     context = speech_v1p1beta1.SpeechContext(
-        phrases=["ไวรัส", "virus", "covid", "โคโรน่าไวรัส", "ไวรัส", "วัคซีน"],
+        phrases=[
+            "ไวรัส",
+            "virus",
+            "covid",
+            "โคโรน่าไวรัส",
+            "ไวรัส",
+            "วัคซีน",
+            "โควิด",
+            "coronavirus",
+            "โคโรน่าไวรัส",
+            "Vaccine",
+            "วัคซีน",
+            "Blueprint",
+            "บลูปริ้น",
+            "blueprint"
+            "3 แนวทาง",
+            "AstraZeneca",
+            "SCG",
+            "Oxford",
+            "พ.ร.บ.จัดซื้อจัดจ้าง",
+            "วิจัยในประเทศ",
+            "ทีมไทยแลนด์",
+            "Team Thailand",
+            "สวทช.",
+            "การให้ทุน",
+            "ความพร้อม",
+            "ถ่ายทอดเทคโนโลยี"
+        ],
         boost=20
     )
 
@@ -100,12 +144,10 @@ def gcp_transcribe(audio_byte, sample_rate_hertz=44000):
     )
 
     config = speech_v1p1beta1.RecognitionConfig(
-        #encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
+        encoding=speech_v1p1beta1.RecognitionConfig.AudioEncoding.MP3,
         enable_automatic_punctuation=True,
         sample_rate_hertz=sample_rate_hertz,
         language_code="th-TH",
-       # diarization_config=diarization_config,
-        #metadata=metadata,
         speech_contexts=[context]
     )
 
